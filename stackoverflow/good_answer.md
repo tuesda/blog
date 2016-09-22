@@ -1,0 +1,1 @@
+* [Change the text color of a single ClickableSpan when pressed without affecting other ClickableSpans in the same TextView](http://stackoverflow.com/a/20905824/4290602)
