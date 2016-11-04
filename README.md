@@ -1,5 +1,7 @@
 这里记录着一些Android开发中遇到的坑和总结的经验，不成敬意：
 
+* 字体
+	* [Font中top ascent baseline descent bottom leading含义](./android/text/url.md) 	
 * [PopupWindow对齐像menu popup一样](./android/PopupMenu_align_achorView.md)
 * [RecyclerView.notifyItemChanged()异常问题](./android/RecyclerView_Adapter_notifyItemChanged.md)
 * [TextView ellipsize:end 设置失效](./android/TextView_ellipsize_end_fail.md)
