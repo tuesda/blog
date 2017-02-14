@@ -1,0 +1,1 @@
+* how to get MAX_TEXTURE_SIZE in openGl:  <http://stackoverflow.com/questions/26985858/gles10-glgetintegerv-returns-0-in-lollipop-only>
