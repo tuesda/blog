@@ -2,7 +2,7 @@
 
 微博评论列表里所有评论的总高度如果没有占满一屏，那么会有一段固定的空白填充在底部，使得滑到最底时最新一条评论刚好置顶，如下图。对于只想看评论列表来说展示效率很高，也符合直觉。我们应用也需要实现这个效果，在这里分享一下实现的两种方法。
 
-<img src="img/weibo_comments.png" alt="weibo_comments" style="width: 250px;"/>
+<img src="img/weibo_comments.png" alt="weibo_comments" style="width: 40%;"/>
 
 这里将评论列表底部空白部分称作 bottom space，评论列表用 RecyclerView 来实现。当评论列表的总高度大于等于 RecyclerView 高度时很简单，bottom space 的高度设为0就好了，问题主要是在评论列表总高度小于 RecyclerView 高度时，如何动态调整 bottom space 的高度。关于这点我们实现的时候先后采取了两种解决方案：
 
