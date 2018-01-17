@@ -1,4 +1,4 @@
-###多列表ViewPager实现TabLayout吸顶效果
+###多列表ViewPager实现TabLayout吸顶效果###
 
 这是怎样一种场景呢？如果你有用即刻App的话(没用的话就下载一个，哈哈)，可以打开最近热门页面。
 
@@ -42,12 +42,7 @@
                 android:id="@+id/tab"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:layout_marginLeft="20dp"
-                android:layout_marginRight="20dp"
-                android:layout_marginTop="?attr/actionBarSize"
-                app:tabBackground="@null"
-                app:tabIndicatorHeight="@dimen/thin_divider_height"
-                app:tabMode="fixed" />
+                android:layout_marginTop="?attr/actionBarSize" />
         </android.support.design.widget.CollapsingToolbarLayout>
     </android.support.design.widget.AppBarLayout>
 </android.support.design.widget.CoordinatorLayout>
