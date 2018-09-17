@@ -1,4 +1,4 @@
-###行间距失效问题
+### 行间距失效问题
 
 问题描述：
 
@@ -143,6 +143,10 @@ if (reflowed == null) {
 找到问题后，规避这个 bug 很简单，只要将 DynamicLayout 中的静态变量 reflowed 设置为空，每次用到时候创建新的 StaticLayout 对象就可以了。代码如下：
 
 ```
+
+@Nullable
+private Pair<Integer, Reflect> layoutReflect;
+
 @Override
 protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
     super.onLayout(changed, left, top, right, bottom);
@@ -172,5 +176,10 @@ private void nullRecycledStaticLayout(DynamicLayout dl) {
         JLog.e(e);
     }
 }
+```
+这里用到了反射来将 sStaticLayout 设置为空，这里用到的反射类库是 [JOOR](https://github.com/jOOQ/jOOR)。因为用到反射，混淆文件也要加上下面这行，防止被混淆。
+
+```
+-keep public class android.text.DynamicLayout { <fields>; }
 ```
 
