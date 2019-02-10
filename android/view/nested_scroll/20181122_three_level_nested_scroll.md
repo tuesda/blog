@@ -61,11 +61,11 @@ public interface NestedScrollingParent2 {
 
 一个常见的嵌套滚动例子是 CoordinatorLayout/AppbarLayout - RecyclerView, 实现的效果是向上滑动列表时，会先将 AppbarLayout 向上滑动直到完全折叠，向下滑动至列表最顶部后会展开 AppbarLayout, 如下图：
 
-<img src="res/two_level_nested_scroll_example.gif" alt="drawing" width="200"/>
+<img src="res/two_level_nested_scroll_example.gif" alt="drawing" width="50%"/>
 
 这里实现 NestedScrollingParent2 的是 CoordinatorLayout/AppbarLayout, 实现 NestedScrollingChild2 的是 RecyclerView。对于这种两级嵌套滚动的需求使用 CoordinatorLayout 几乎都能实现，如果遇到特殊的业务需求基于 CoordinatorLayout 和 RecyclerView 的实现改改也能实现。
 
-<img src="res/three_level_nested_scroll_example.gif" alt="drawing" width="200"/>
+<img src="res/three_level_nested_scroll_example.gif" alt="drawing" width="50%"/>
 
 我这里遇到的需求是即刻首页的样式(可参考即刻5.4.2版本)，除了要有 AppbarLayout 折叠效果之外还要在 AppbarLayout 顶部展示搜索框和刷新动画。这里的滑动逻辑是：
 
