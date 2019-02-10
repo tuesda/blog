@@ -86,7 +86,7 @@ public interface NestedScrollingParent2 {
 
 ![three_level_nested_scrolling_scroll_sequence](res/three_level_nested_scrolling_scroll_sequence.png)
 
-二级嵌套滚动对滚动处理时机只有三个阶段：preScroll、scroll 和 afterScroll。而三级嵌套滚动的处理时机就多一些，有七个阶段：prePreScroll、preScroll、afterPreScroll、scroll、preAfterScroll、afterScroll 和 afterAfterScroll，可以看出相比二级嵌套多了 prePreScroll、afterPreScroll、preAfterScroll 和 afterAfterScroll 这四个阶段，多出的这几个阶段都是给 Grand 用的。到这里可以发现 NestedScrollingParent2 其实不能完全描述 Grand 的能力，确实最理想的方案应该是新建一对接口 NestedScrollingGrand2 和 NestedScrollingGrandChild2 来描述新增的四个对滚动事件的处理阶段，但考虑到我这里的例子 Grand 对 Parent 的处理没有那么精细化，所以还是通过复用 NestedScrolling(Parent2/Child2) 和一些附加方法来实现。以后如果实现了 NestedScrolling(Grand2/GrandChild2) 接口，也会及时更新。根据这个图示即刻首页的滑动实现的思路就很简单了：
+二级嵌套滚动对滚动处理时机只有三个阶段：preScroll、scroll 和 afterScroll。而三级嵌套滚动的处理时机就多一些，有七个阶段：prePreScroll、preScroll、afterPreScroll、scroll、preAfterScroll、afterScroll 和 afterAfterScroll，可以看出相比二级嵌套多了 prePreScroll、afterPreScroll、preAfterScroll 和 afterAfterScroll 这四个阶段，多出的这几个阶段都是给 Grand 用的。到这里可以发现 NestedScrollingParent2 其实不能完全描述 Grand 的能力，确实最理想的方案应该是新建一对接口 NestedScrollingGrand2 和 NestedScrollingGrandChild2 来描述新增的四个对滚动事件的处理阶段，但考虑到我这里的例子 Grand 对 Parent 的处理没有那么精细化，所以还是通过复用 NestedScrolling(Parent2/Child2) 和一些附加方法来实现。以后如果实现了 NestedScrolling(Grand2/GrandChild2) 接口，也会及时更新。根据上图即刻首页滑动的实现思路就很简单了：
 
 1. onPrePreScroll 中执行折叠刷新动画的逻辑，onAfterAfterScroll 中执行展开刷新动画的逻辑。
 2. onPreScroll 中执行折叠 AppbarLayout 的逻辑，onAfterPreScroll 中执行搜索框折叠的逻辑。
