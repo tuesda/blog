@@ -67,7 +67,7 @@ public interface NestedScrollingParent2 {
 
 <img src="res/three_level_nested_scroll_example.gif" alt="drawing" width="50%"/>
 
-我这里遇到的需求是即刻首页的样式(可参考即刻5.4.2版本)，除了要有 AppbarLayout 折叠效果之外还要在 AppbarLayout 顶部展示搜索框和刷新动画。这里的滑动逻辑是：
+我这里遇到的需求是即刻首页的样式(可参考即刻5.4.1版本)，除了要有 AppbarLayout 折叠效果之外还要在 AppbarLayout 顶部展示搜索框和刷新动画。这里的滑动逻辑是：
 
 1. 向上滑动时，最先折叠刷新动画，向下滑动时最后展开刷新动画。
 2. 向上滑动列表时先折叠 AppbarLayout，AppbarLayout 完全折叠后再折叠搜索框。
