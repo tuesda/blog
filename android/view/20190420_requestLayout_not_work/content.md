@@ -10,6 +10,8 @@ view.layoutParams.apply{
 view.requestLayout()
 ```
 
+要分析调用失效的原因，首先我们需要搞清楚 requestLayout() 流程。
+
 #### requestLayout 调用流程
 
 调用 requestLayout() 之后是如何开始一次 layout 的呢？我们看一下 requestLayout() 的源码：
@@ -78,11 +80,70 @@ if (!mLayoutRequesters.contains(view)) {
 
 根据 requestLayout() 的调用流程可以发现，如果由下到上的调用中断无法调到 ViewRootImpl.requestLayout() 的话就会导致无法刷新布局。通过查看源码我们发现调用父 View 的 requestLayout() 有两个条件 parent != null 和 !parent.isLayoutRequested()，如果 parent 为空说明当前 View 不在界面上，那也不需要刷新布局，这个条件是合理的。
 
-另外一个条件表示 parent 已经调用过 requestLayout()，这个判断为了防止重复布局或者防止正在进行的布局没有结束时开始下一次布局。但如果我们确实需要刷新当前界面的布局该怎么办呢？没事，View 的设计者想到了这种情况，对应的解决方案就是上面的 request-during-layout 处理。
+另外一个条件表示 parent 已经调用过 requestLayout()，这个判断为了防止正在进行的布局没有结束时开始下一次布局。但如果我们确实需要刷新当前界面的布局该怎么办呢？没事，View 的设计者想到了这种情况，对应的解决方案就是上面的 request-during-layout 处理。
 
 不过 request-during-layout 处理并不是万无一失的，它有两个漏洞还是会造成 requestLayout() 调用失效：
 
-1. request-during-layout 的处理必须是在 View.isInLayout == true 时才能奏效，如果当前不在 layout pass 中而且 requestLayout() 调用链无法作用到 ViewRootImpl.requestLayout() 时调用还是会失效。
+1. request-during-layout 的处理必须是在 View.isInLayout == true 时才能奏效，如果当前不在 layout pass 中而且 requestLayout() 调用链无法作用到 ViewRootImpl.requestLayout() 时调用还是会失效。我们前面有提到祖先 View.isLayoutRequested() == true 的情况就是当前界面在进行 layout，但这里却说 isInLayout == false，是不是和前面说的自相矛盾了？当然不是。首先我们先看看 View.isInLayout() 的代码:
+
+	``` java
+	public boolean isInLayout() {
+        ViewRootImpl viewRoot = getViewRootImpl();
+        return (viewRoot != null && viewRoot.isInLayout());
+    }
+	```
+	可以看到 isInLayout() 依赖于 ViewRootImpl.isInLayout() 继续看看这个方法:
+
+	 ``` java
+	boolean isInLayout() {
+        return mInLayout;
+    }
+	 ```
+	 而 `mInLayout = true` 仅在 ViewRootImpl.performLayout() 存在，换句话说只有这个方法触发的布局刷新才会令 View.isInLayout() == true，也就是说通过别的途径触发的布局刷新会导致这种 requestLayout() 调用失效。具体会有什么布局刷新调用不是通过 ViewRootImpl.performLayout() 发起的呢？目前遇到的一种是 RecyclerView 中滑动引起 itemView 布局刷新，具体来说是将界面外的 itemView 滑动到界面内时，调用栈如下:
+
+	 ```
+...
+at android.view.View.layout(View.java:22254)
+at android.view.ViewGroup.layout(ViewGroup.java:6310)
+at android.widget.LinearLayout.setChildFrame(LinearLayout.java:1829)
+at android.widget.LinearLayout.layoutHorizontal(LinearLayout.java:1818)
+at android.widget.LinearLayout.onLayout(LinearLayout.java:1584)
+at android.view.View.layout(View.java:22254)
+at android.view.ViewGroup.layout(ViewGroup.java:6310)
+at android.widget.LinearLayout.setChildFrame(LinearLayout.java:1829)
+at android.widget.LinearLayout.layoutVertical(LinearLayout.java:1673)
+at android.widget.LinearLayout.onLayout(LinearLayout.java:1582)
+at android.view.View.layout(View.java:22254)
+at android.view.ViewGroup.layout(ViewGroup.java:6310)
+at android.widget.LinearLayout.setChildFrame(LinearLayout.java:1829)
+at android.widget.LinearLayout.layoutVertical(LinearLayout.java:1673)
+at android.widget.LinearLayout.onLayout(LinearLayout.java:1582)
+at android.view.View.layout(View.java:22254)
+at android.view.ViewGroup.layout(ViewGroup.java:6310)
+at androidx.recyclerview.widget.RecyclerView$LayoutManager.layoutDecoratedWithMargins(RecyclerView.java:9322)
+at androidx.recyclerview.widget.LinearLayoutManager.layoutChunk(LinearLayoutManager.java:1615)
+at androidx.recyclerview.widget.LinearLayoutManager.fill(LinearLayoutManager.java:1517)
+at androidx.recyclerview.widget.LinearLayoutManager.scrollBy(LinearLayoutManager.java:1331)
+at androidx.recyclerview.widget.LinearLayoutManager.scrollVerticallyBy(LinearLayoutManager.java:1075)
+at androidx.recyclerview.widget.RecyclerView.scrollStep(RecyclerView.java:1832)
+at androidx.recyclerview.widget.RecyclerView.scrollByInternal(RecyclerView.java:1927)
+at androidx.recyclerview.widget.RecyclerView.onTouchEvent(RecyclerView.java:3187)
+...
+at com.android.internal.policy.DecorView.superDispatchTouchEvent(DecorView.java:448)
+at com.android.internal.policy.PhoneWindow.superDispatchTouchEvent(PhoneWindow.java:1840)
+at android.app.Activity.dispatchTouchEvent(Activity.java:3873)
+at androidx.appcompat.view.WindowCallbackWrapper.dispatchTouchEvent(WindowCallbackWrapper.java:69)
+at androidx.appcompat.view.WindowCallbackWrapper.dispatchTouchEvent(WindowCallbackWrapper.java:69)
+at com.android.internal.policy.DecorView.dispatchTouchEvent(DecorView.java:406)
+at android.view.View.dispatchPointerEvent(View.java:14056)
+...
+at android.view.ViewRootImpl.deliverInputEvent(ViewRootImpl.java:7621)
+...
+at android.view.InputEventReceiver.dispatchInputEvent(InputEventReceiver.java:188)
+...
+	 ```
+	 从上面的调用栈可以清楚的看到 InputEvent -> TouchEvent -> RecyclerView.scroll\*() -> LinearLayoutManager.scroll*() -> LinearLayoutManager.layoutChunk() -> itemView.layout() 的调用流程，这里的 itemView 确实处于 layout 过程中，但不是 ViewRootImpl.performLayout 发起的，所以 View.isInLayout() == false，就会触发我们这条调用失效。所以这个漏洞是 View 的设计者的责任吗？我认为不是的，由滚动触发 layout 的行为是 RecyclerView 的特殊处理，而对这种特殊处理导致的 requestLayout() 调用失效就应该由触发者 RecyclerView 解决，显然它没有。
+
 2. 即使 request-during-layout 能够被触发，在延迟调用 requestLayout() 前还会对发起 View 进行一次过滤，该 View 和它的祖先 View 的 visibility 必须不是 GONE，并且被设置 View.PFLAG\_FORCE\_LAYOUT 状态，对应代码在 `ViewRootImpl.getValidLayoutRequesters()`。第一个过滤条件可以理解，不可见的 View 不需要布局。第二个可能会造成调用失效，该状态表示是否需要被重新布局，调用 requestLayout() 时该状态被启用，layout 完成后被清掉。比如在一次 layout 中刚通过调用 requestLayout() 设置了 View.PFLAG\_FORCE\_LAYOUT，然后还没等到 request-during-layout 处理，这个标志位就被清掉了。有这种可能么？有的，代码如下：
 
 	``` kotlin
