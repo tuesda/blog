@@ -62,7 +62,7 @@ if (!mHandlingLayoutInLayoutRequest) {
 
 现在我们来看一下 View.requestLayout() 中刚才跳过的部分，这里通过 mAttachInfo.mViewRequestingLayout 变量来确定发起 requestLayout() 的 View，因为只有发起 View 能触发 request-during-layout 逻辑，它的祖先 Views 不可以，至于原因后面会讲到。
 
-request-during-layout 从字面上看是当进行一次 layout pass 时，当前界面中有 View 调用 requestLayout()。代码中可以看到通过 `viewRoot.isInLayout()` 判断当前是否在 layout，然后调用 `ViewRootImpl.requestLayoutDuringLayout` 方法，我们继续看看这个方法：
+request-during-layout 从字面上看是在进行一次 layout pass 时，当前界面中有 View 调用 requestLayout()。代码中可以看到通过 `viewRoot.isInLayout()` 判断当前是否在 layout，然后调用 `ViewRootImpl.requestLayoutDuringLayout` 方法，我们继续看看这个方法：
 
 ``` java
 ...
@@ -72,13 +72,13 @@ if (!mLayoutRequesters.contains(view)) {
 ...
 ```
 
-核心逻辑就上面这一句，将发起 View 添加在 ViewRootImpl 的 mLayoutRequesters 列表中。我们看看什么时候使用这个列表，通过查看代码发现使用的地方在 performLayout() 中，前一句代码是 `mInLayout = false` 说明是在上一次 layout pass 结束后处理这个列表。处理的逻辑也比较简单，先对这个列表进行过滤拿到有效的 View，然后再依次调用 requestLayout() 的方法。
+核心逻辑就上面这一句，将发起 View 添加在 ViewRootImpl 的 mLayoutRequesters 列表中。继续看看什么时候使用这个列表，通过查看代码发现使用的地方在 performLayout() 中，前一句代码是 `mInLayout = false` 说明是在上一次 layout pass 结束后处理这个列表。处理的逻辑也比较简单，先对这个列表进行过滤拿到有效的 View，然后再依次调用 requestLayout() 的方法。
 
-所以 request-during-layout 的处理可以简单理解为将在 layout 过程中的 requestLayout() 调用延迟到当前 layout pass 结束时再调用，这样也就理解了为什么只有发起 View 需要触发 request-during-layout 逻辑。
+所以 request-during-layout 的处理可以简单理解为将在 layout 过程中的 requestLayout() 调用延迟到当前 layout pass 结束后再调用，这样也就理解了为什么只有发起 View 需要触发 request-during-layout 逻辑。
 
 #### requestLayout() 调用失效原因
 
-根据 requestLayout() 的调用流程可以发现，如果由下到上的调用中断无法调到 ViewRootImpl.requestLayout() 的话就会导致无法刷新布局。通过查看源码我们发现调用父 View 的 requestLayout() 有两个条件 parent != null 和 !parent.isLayoutRequested()，如果 parent 为空说明当前 View 不在界面上，那也不需要刷新布局，这个条件是合理的。
+根据 requestLayout() 的调用流程可以发现，如果由下到上的调用中断无法调到 ViewRootImpl.requestLayout() 的话就会导致无法刷新布局。通过查看源码我们发现调用父 View 的 requestLayout() 之前需要满足两个条件 parent != null 和 !parent.isLayoutRequested()，如果 parent 为空说明当前 View 不在界面上，那也不需要刷新布局，这个条件是合理的。
 
 另外一个条件表示 parent 已经调用过 requestLayout()，这个判断为了防止正在进行的布局没有结束时开始下一次布局。但如果我们确实需要刷新当前界面的布局该怎么办呢？没事，View 的设计者想到了这种情况，对应的解决方案就是上面的 request-during-layout 处理。
 
@@ -93,7 +93,7 @@ if (!mLayoutRequesters.contains(view)) {
     }
 	```
 	
-	可以看到 isInLayout() 依赖于 ViewRootImpl.isInLayout() 继续看看这个方法:
+	可以看到 isInLayout() 依赖于 ViewRootImpl.isInLayout()，继续看看这个方法:
 
 	 ``` java
 	boolean isInLayout() {
@@ -101,7 +101,7 @@ if (!mLayoutRequesters.contains(view)) {
     }
 	 ```
 	 
-	 而 `mInLayout = true` 仅在 ViewRootImpl.performLayout() 存在，换句话说只有这个方法触发的布局刷新才会令 View.isInLayout() == true，也就是说通过别的途径触发的布局刷新会导致这种 requestLayout() 调用失效。具体会有什么布局刷新调用不是通过 ViewRootImpl.performLayout() 发起的呢？目前遇到的一种是 RecyclerView 中滑动引起 itemView 布局刷新，具体来说是将界面外的 itemView 滑动到界面内时，调用栈如下:
+	 而 `mInLayout = true` 仅在 ViewRootImpl.performLayout() 中存在，换句话说只有这个方法触发的布局刷新才会令 View.isInLayout() == true，如果通过别的途径触发布局刷新就会导致这种 requestLayout() 调用失效。具体会有什么布局刷新调用不是通过 ViewRootImpl.performLayout() 发起的呢？目前遇到的一种情况是在 RecyclerView 中滑动页面引起的 itemView 布局刷新，具体来说是将界面外的 itemView 滑动到界面内时。一个调用栈例子如下:
 
 	```
 	...
@@ -145,9 +145,9 @@ if (!mLayoutRequesters.contains(view)) {
 	...
 	```
 	 
-	 从上面的调用栈可以清楚的看到 InputEvent -> TouchEvent -> RecyclerView.scroll\*() -> LinearLayoutManager.scroll*() -> LinearLayoutManager.layoutChunk() -> itemView.layout() 的调用流程，这里的 itemView 确实处于 layout 过程中，但不是 ViewRootImpl.performLayout 发起的，所以 View.isInLayout() == false，就会触发我们这条调用失效。所以这个漏洞是 View 的设计者的责任吗？我认为不是的，由滚动触发 layout 的行为是 RecyclerView 的特殊处理，而对这种特殊处理导致的 requestLayout() 调用失效就应该由触发者 RecyclerView 解决，显然它没有。
+	 从上面的调用栈可以清楚的看到 InputEvent -> TouchEvent -> RecyclerView.scroll\*() -> LinearLayoutManager.scroll*() -> LinearLayoutManager.layoutChunk() -> itemView.layout() 这样一个调用流程，这里的 itemView 确实处于 layout 过程中，但不是 ViewRootImpl.performLayout 发起的，所以 View.isInLayout() == false，就会触发我们这条调用失效。这个漏洞是 View 的设计者的责任吗？我认为不是的，由滚动触发 layout 的行为是 RecyclerView 的特殊处理，而对这种特殊处理导致的 requestLayout() 调用失效就应该由触发者 RecyclerView 解决，显然它没有。
 
-2. 即使 request-during-layout 能够被触发，在延迟调用 requestLayout() 前还会对发起 View 进行一次过滤，该 View 和它的祖先 View 的 visibility 必须不是 GONE，并且被设置 View.PFLAG\_FORCE\_LAYOUT 状态，对应代码在 `ViewRootImpl.getValidLayoutRequesters()`。第一个过滤条件可以理解，不可见的 View 不需要布局。第二个可能会造成调用失效，该状态表示是否需要被重新布局，调用 requestLayout() 时该状态被启用，layout 完成后被清掉。比如在一次 layout 中刚通过调用 requestLayout() 设置了 View.PFLAG\_FORCE\_LAYOUT，然后还没等到 request-during-layout 处理，这个标志位就被清掉了。有这种可能么？有的，代码如下:
+2. 即使 request-during-layout 能够被触发，在延迟调用 requestLayout() 前还会对发起 View 进行一次过滤，该 View 和它的祖先 View 的 visibility 必须不是 GONE，并且被设置了 View.PFLAG\_FORCE\_LAYOUT 状态，对应代码在 `ViewRootImpl.getValidLayoutRequesters()`可见。第一个过滤条件可以理解，不可见的 View 不需要布局。第二个可能会造成调用失效，该状态表示是否需要被重新布局，调用 requestLayout() 时该状态被启用，layout 完成后被清掉。比如在一次 layout 中刚通过调用 requestLayout() 设置了 View.PFLAG\_FORCE\_LAYOUT，然后还没等到 request-during-layout 处理，这个标志位就被清掉了。有这种可能么？有的，代码如下:
 
 	``` kotlin
 	view.addOnLayoutChangeListener { v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom -> 
@@ -219,7 +219,7 @@ fun View.safeRequestLayout() {
 }
 ```
 
-通过 isSafeToRequestDirectly() 来判断调用 requestLayout() 是否奏效，这个方法里面分别从 isInLayout == true/false 两个情况判断，对应上节中分析的两种失效情况。如果是的话就直接调用否则通过 post() 方法等当前 layout 结束后再延迟调用。
+通过 isSafeToRequestDirectly() 来判断调用 requestLayout() 是否奏效，这个方法里面分别从 isInLayout == true/false 两种情况判断，对应上面分析的两种失效情况。如果是的话就直接调用否则通过 post() 方法等当前 layout 结束后再延迟调用。
 
 
 
