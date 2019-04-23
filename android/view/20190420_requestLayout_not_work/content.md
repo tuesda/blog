@@ -103,47 +103,47 @@ if (!mLayoutRequesters.contains(view)) {
 	 
 	 而 `mInLayout = true` 仅在 ViewRootImpl.performLayout() 存在，换句话说只有这个方法触发的布局刷新才会令 View.isInLayout() == true，也就是说通过别的途径触发的布局刷新会导致这种 requestLayout() 调用失效。具体会有什么布局刷新调用不是通过 ViewRootImpl.performLayout() 发起的呢？目前遇到的一种是 RecyclerView 中滑动引起 itemView 布局刷新，具体来说是将界面外的 itemView 滑动到界面内时，调用栈如下:
 
-	 ```
+	```
 	...
-at android.view.View.layout(View.java:22254)
-at android.view.ViewGroup.layout(ViewGroup.java:6310)
-at android.widget.LinearLayout.setChildFrame(LinearLayout.java:1829)
-at android.widget.LinearLayout.layoutHorizontal(LinearLayout.java:1818)
-at android.widget.LinearLayout.onLayout(LinearLayout.java:1584)
-at android.view.View.layout(View.java:22254)
-at android.view.ViewGroup.layout(ViewGroup.java:6310)
-at android.widget.LinearLayout.setChildFrame(LinearLayout.java:1829)
-at android.widget.LinearLayout.layoutVertical(LinearLayout.java:1673)
-at android.widget.LinearLayout.onLayout(LinearLayout.java:1582)
-at android.view.View.layout(View.java:22254)
-at android.view.ViewGroup.layout(ViewGroup.java:6310)
-at android.widget.LinearLayout.setChildFrame(LinearLayout.java:1829)
-at android.widget.LinearLayout.layoutVertical(LinearLayout.java:1673)
-at android.widget.LinearLayout.onLayout(LinearLayout.java:1582)
-at android.view.View.layout(View.java:22254)
-at android.view.ViewGroup.layout(ViewGroup.java:6310)
-at androidx.recyclerview.widget.RecyclerView$LayoutManager.layoutDecoratedWithMargins(RecyclerView.java:9322)
-at androidx.recyclerview.widget.LinearLayoutManager.layoutChunk(LinearLayoutManager.java:1615)
-at androidx.recyclerview.widget.LinearLayoutManager.fill(LinearLayoutManager.java:1517)
-at androidx.recyclerview.widget.LinearLayoutManager.scrollBy(LinearLayoutManager.java:1331)
-at androidx.recyclerview.widget.LinearLayoutManager.scrollVerticallyBy(LinearLayoutManager.java:1075)
-at androidx.recyclerview.widget.RecyclerView.scrollStep(RecyclerView.java:1832)
-at androidx.recyclerview.widget.RecyclerView.scrollByInternal(RecyclerView.java:1927)
-at androidx.recyclerview.widget.RecyclerView.onTouchEvent(RecyclerView.java:3187)
-...
-at com.android.internal.policy.DecorView.superDispatchTouchEvent(DecorView.java:448)
-at com.android.internal.policy.PhoneWindow.superDispatchTouchEvent(PhoneWindow.java:1840)
-at android.app.Activity.dispatchTouchEvent(Activity.java:3873)
-at androidx.appcompat.view.WindowCallbackWrapper.dispatchTouchEvent(WindowCallbackWrapper.java:69)
-at androidx.appcompat.view.WindowCallbackWrapper.dispatchTouchEvent(WindowCallbackWrapper.java:69)
-at com.android.internal.policy.DecorView.dispatchTouchEvent(DecorView.java:406)
-at android.view.View.dispatchPointerEvent(View.java:14056)
-...
-at android.view.ViewRootImpl.deliverInputEvent(ViewRootImpl.java:7621)
-...
-at android.view.InputEventReceiver.dispatchInputEvent(InputEventReceiver.java:188)
-...
-	 ```
+	at android.view.View.layout(View.java:22254)
+	at android.view.ViewGroup.layout(ViewGroup.java:6310)
+	at android.widget.LinearLayout.setChildFrame(LinearLayout.java:1829)
+	at android.widget.LinearLayout.layoutHorizontal(LinearLayout.java:1818)
+	at android.widget.LinearLayout.onLayout(LinearLayout.java:1584)
+	at android.view.View.layout(View.java:22254)
+	at android.view.ViewGroup.layout(ViewGroup.java:6310)
+	at android.widget.LinearLayout.setChildFrame(LinearLayout.java:1829)
+	at android.widget.LinearLayout.layoutVertical(LinearLayout.java:1673)
+	at android.widget.LinearLayout.onLayout(LinearLayout.java:1582)
+	at android.view.View.layout(View.java:22254)
+	at android.view.ViewGroup.layout(ViewGroup.java:6310)
+	at android.widget.LinearLayout.setChildFrame(LinearLayout.java:1829)
+	at android.widget.LinearLayout.layoutVertical(LinearLayout.java:1673)
+	at android.widget.LinearLayout.onLayout(LinearLayout.java:1582)
+	at android.view.View.layout(View.java:22254)
+	at android.view.ViewGroup.layout(ViewGroup.java:6310)
+	at androidx.recyclerview.widget.RecyclerView$LayoutManager.layoutDecoratedWithMargins(RecyclerView.java:9322)
+	at androidx.recyclerview.widget.LinearLayoutManager.layoutChunk(LinearLayoutManager.java:1615)
+	at androidx.recyclerview.widget.LinearLayoutManager.fill(LinearLayoutManager.java:1517)
+	at androidx.recyclerview.widget.LinearLayoutManager.scrollBy(LinearLayoutManager.java:1331)
+	at androidx.recyclerview.widget.LinearLayoutManager.scrollVerticallyBy(LinearLayoutManager.java:1075)
+	at androidx.recyclerview.widget.RecyclerView.scrollStep(RecyclerView.java:1832)
+	at androidx.recyclerview.widget.RecyclerView.scrollByInternal(RecyclerView.java:1927)
+	at androidx.recyclerview.widget.RecyclerView.onTouchEvent(RecyclerView.java:3187)
+	...
+	at com.android.internal.policy.DecorView.superDispatchTouchEvent(DecorView.java:448)
+	at com.android.internal.policy.PhoneWindow.superDispatchTouchEvent(PhoneWindow.java:1840)
+	at android.app.Activity.dispatchTouchEvent(Activity.java:3873)
+	at androidx.appcompat.view.WindowCallbackWrapper.dispatchTouchEvent(WindowCallbackWrapper.java:69)
+	at androidx.appcompat.view.WindowCallbackWrapper.dispatchTouchEvent(WindowCallbackWrapper.java:69)
+	at com.android.internal.policy.DecorView.dispatchTouchEvent(DecorView.java:406)
+	at android.view.View.dispatchPointerEvent(View.java:14056)
+	...
+	at android.view.ViewRootImpl.deliverInputEvent(ViewRootImpl.java:7621)
+	...
+	at android.view.InputEventReceiver.dispatchInputEvent(InputEventReceiver.java:188)
+	...
+	```
 	 
 	 从上面的调用栈可以清楚的看到 InputEvent -> TouchEvent -> RecyclerView.scroll\*() -> LinearLayoutManager.scroll*() -> LinearLayoutManager.layoutChunk() -> itemView.layout() 的调用流程，这里的 itemView 确实处于 layout 过程中，但不是 ViewRootImpl.performLayout 发起的，所以 View.isInLayout() == false，就会触发我们这条调用失效。所以这个漏洞是 View 的设计者的责任吗？我认为不是的，由滚动触发 layout 的行为是 RecyclerView 的特殊处理，而对这种特殊处理导致的 requestLayout() 调用失效就应该由触发者 RecyclerView 解决，显然它没有。
 
