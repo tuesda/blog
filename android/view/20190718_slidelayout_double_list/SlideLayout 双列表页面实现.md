@@ -95,7 +95,7 @@ enum class SlideGesture { SCROLL, SLIDE, REFRESH }
 
 三个状态的彼此转换关系如下图：
 
-<img src="/Users/zhanglei/blog/android/view/20190718_slidelayout_double_list/state_change_process_1.png" width="50%" />
+<img src="state_change_process_1.png" width="50%" />
 
 确认了状态定义后剩下的工作基本就分为两部分：状态识别和滚动处理。
 
