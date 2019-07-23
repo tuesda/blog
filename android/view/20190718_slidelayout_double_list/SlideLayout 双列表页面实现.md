@@ -2,70 +2,112 @@
 
 ---
 
-
-
-即刻5.3版本的时候，随着圈子详情页的内容越来越丰富，之前的 CoordinatorLayout { AppBarLayout + RecyclerView } 结构已经不能满足我们的需求，需要一个新的布局方案承载各种圈子元素并满足我们的自定义交互。
+即刻 5.3 版本的时候，随着圈子详情页的内容越来越丰富，之前的页面结构已经不能满足我们的需求，需要一个新的布局方案承载各种圈子元素并满足我们的自定义交互。
 
 ##### 改版前
 
-之前的结构比较简单，头部显示圈子的基本信息比如图片、标题和简介等信息，底部展示圈子内的消息列表，向上滑动可折叠头部区域让用户更加专注地浏览消息列表。实现采用 CoordinatorLayout { AppBarLayout + RecyclerView } 的组合，CoordinatorLayout 作为容器负责两部分的布局和联动滑动，AppBarLayout 负责展示头部信息，RecyclerView 展示消息列表。
+<img src="before_topic_detail_screenshot.png" width="30%" />
 
-##### 遇到的问题
+改版前的结构比较简单，头部显示圈子的基本信息比如图片、标题和简介等信息，底部展示圈子内的消息列表，向上滑动可折叠头部区域让用户更加专注地浏览消息列表，结构如下：
 
-之前版本由于圈子信息简单，这套架构已经可以满足我们的需求。但是当圈子引入了插件、成员、置顶等部分时，头部变得越来越长，完全展开会严重地影响用户消费消息列表。所以我们需要有个功能可以快速地在头部和列表之间切换，而且由于头部信息可能超过一屏，所以头部也需要可以滑动。总结一下我们对新版圈子详情页的需求：
+* CoordinatorLayout
+  * AppBarLayout
+  * ViewPager
+    * Fragment
+      * RecyclerView
+    * Fragment
+      * RecyclerView
 
-1. 头部不到一屏时和原来实现保持一致，头部随列表滑动可以折叠。
-2. 头部超过一屏时可以滑动，并且可以快速切换到展示列表。
+CoordinatorLayout 作为容器负责两部分的布局和联动滑动，AppBarLayout 负责展示头部信息，底部通过 ViewPager 和 Fragment 实现多 tab 页面，Fragment 内部通过 RecyclerView 实现消息列表。
+
+##### 改版后
+
+<img src="after_topic_detail_screenshot.png" width="30%" />
+
+改版后头部新增了一些元素比如插件、创建者，原有的元素展示区域扩大，导致头部高度增大。使得用户刚进入圈子页时几乎看不到消息列表区域，为了解决这个问题我们需要页面支持快速地在头部和列表之间切换，并且当头部超过一屏时也可以滑动。简单总结下我们的需求：
+
+1. 当头部信息较少，即没有达到一屏时表现和原有实现一致，头部随列表滑动可以折叠。
+2. 当头部信息较多，即超过一屏时除了头部随着列表滑动折叠外，还可以在头部和列表之间快速切换。
 
 ##### 解决方案
 
-第一条好解决，只要按照原来的实现来就行了。问题是第二种情况，当头部超过一屏时如何在头部还没有滑到底时快速显示列表，我们这里的解决方案是通过手势操作将列表从底部滑出盖在头部上面，当又需要查看头部区域时再将列表滑下，列表就像一张纸一样从底部滑出/滑进。根据这个方案的工作原理，将新的组件命名为 **SlideLayout**，意思就是处理滑动的布局组件。
+第一条需求原有的 CoordinatorLayout  就可以支持，问题是第二条中的快速切换如何实现，最终我们的产品同事给出的解决方案如下：
+
+<img src="after_topic_detail_header_collapsed_screenshot.png" width="30%" />
+
+从这个截图看上去好像和原来的将头部折叠一样，其实不然。将头部折叠需要先将头部滑到界面外，而这里头部其实没有滑动，列表是盖在头部上面，当想查看头部时再将列表滑下去。
+
+有人可能会说，这和原来的有什么区别，都需要滑动。这种实现的好处主要有三点：
+
+1. 列表只会存在展开和隐藏两种状态，不会存在显示一半的情况，降低头部和列表切换的难度。
+2. 当列表滑动几屏后，此时仍然可以将列表滑出展示头部，不需要将列表滑到最顶部在拉出头部。
+3. 当头部很长时，头部内容滑动在任何位置都可以滑出列表，不需要将头部滑到最底部。
+
+原有的 CoordinatorLayout 不能满足上述需求，所以我们需要实现一个自定义组件，由于这个组件的主要功能就是将页面底部滑出滑进，所以我们将这个组件命名为 **SlideLayout**。
 
 ##### 思路详述
 
-由我们的需求可知有复杂的多组件联动交互，所以 SlideLayout 也需要像 CoordinatorLayout 那样通过嵌套滚动实现。对嵌套滚动不太熟悉的同学可以看下 [三级 NestedScroll 嵌套滚动实践](https://zhuanlan.zhihu.com/p/56582475) 这篇文章，里面对嵌套滚动的机制有详细的解释。
+###### 嵌套滚动
+
+不管是原有逻辑还是新增的，都属于一对嵌套组件的联动交互，不难看出需要用到嵌套滚动机制来实现。首先我们简单了解下嵌套滚动的机制：
+
+<img src="nested_scrolling_sequence.png" width="80%" />
+
+图中 Parent 表示实现了 NestedScrollingParent 接口的组件，Child 表示实现了 NestedScrollingChild 接口的组件，Parent 接受 Child 分发的滚动事件，而且他们不直接关联。
+
+###### SlideLayout 结构
 
 <img src="case_refresh_state.png" width="40%" />
 
-在 SlideLayout 中如上图有三个子组件：refresh、header 和 slider。当用户下拉刷新页面时 refresh 负责展示加载动画；header 负责页面头部，需要包含实现 NestedScrollingChild 的组件从而向 SlideLayout 分发滚动事件；slider 负责列表区域，也需要包含实现 NestedScrollingChild 的组件，原因同 header。实现 NestedScrollingChild 的组件有 NestedScrollView、RecyclerView 等，就圈子详情页这个页面来说，NestedScrollView 实现了页面头部，RecyclerView 实现了消息列表。当然你也可以使用别的实现了该接口的组件。
+如上图在 SlideLayout 中有三个组件：refresh、header 和 slider，它们的含义如下：
 
-前面说到这个页面有两种情况：header 没超过屏幕和超过。没超过时，由于 slider 不能盖在 header 上面，只能和 header 处于一种连接的状态，即 header 的底边连着 slider 的顶边，没有重叠。而当 header 超过屏幕时，由于 slider 可以盖在 header 上面，所以存在着两种状态，一是前面说的连接不重叠，二是 slider 盖在 header 上面的状态。这里我们将连接不重叠的状态称之为 Scroll，将 slider 盖在 header 上面的状态称之为 Slide，加上下拉刷新一共有三个状态，我们这里用一个枚举类型来表示当前的状态：
+1. refresh：当用户下拉刷新页面时 refresh 负责展示加载动画。
+2. header：负责页面头部，需要包含实现 NestedScrollingChild 的组件从而向 SlideLayout 分发滚动事件。
+3. slider：负责列表区域，也需要包含实现 NestedScrollingChild 的组件，原因同 header。
+
+实现 NestedScrollingChild 的组件有 NestedScrollView、RecyclerView 等，就圈子详情页这个页面来说，NestedScrollView 实现了页面头部，RecyclerView 实现了消息列表。
+
+###### 操作状态
+
+在处理 SlideLayout 中的滚动事件时，我们用一个枚举类型定义了三个状态：
 
 ``` kotlin
 enum class SlideGesture { SCROLL, SLIDE, REFRESH }
 ```
 
-Scroll 状态需要和老版本实现保持一致，即头部随着列表的滚动而滚动。Slide 状态的工作主要是将 slider 滑出或者收起来。最后一个状态负责展示刷新动画。这三个状态是互斥的，处于某一状态时不能进行另外两个状态的操作。
+* SCROLL
 
-下面通过图示分别表示三种状态：
+  slider 和 header 处于连接的状态，即 header 的底边连着 slider 的顶边没有重叠。此状态时需要和老版本保持一致，即头部随着列表的滚动而滚动。如下图:
 
-* Scroll
+  <img src="case_scroll_state.png" width="40%" />
 
-<img src="case_scroll_state.png" width="60%" />
+* SLIDE
 
-头部有可能超过屏幕，也有可能没超过。
+  slider 盖在 header 上面，slider 此时有可能展示也有可能隐藏，主要工作是将 slider 滑出或者隐藏。如下图：
 
-* Slide
+  <img src="case_slide_state.png" width="40%" />
 
-  <img src="case_slide_state.png" width="60%" />
+* REFRESH
 
-  头部一定超过屏幕。
+  展示刷新动画，即刷新动画部分高度大于 0。下图只展示了从 Scroll 状态转换而来的情况，其实从 Slide 状态也可以进入 Refresh 状态，和这个类似会在头部上面出现一个刷新动画展示区域，这里就不列出了。
 
-  * Refresh
+  <img src="case_refresh_state.png" width="40%" />
 
-    <img src="case_refresh_state.png" width="40%" />
+三个状态的彼此转换关系如下图：
 
-    这里只展示了从 Scroll 状态转换而来的情况，其实从 Slide 状态也可以进入 Refresh 状态，和上图类似会在头部上面出现一个刷新动画展示区域，这里就不列出了。
+<img src="/Users/zhanglei/blog/android/view/20190718_slidelayout_double_list/state_change_process_1.png" width="50%" />
 
-SlideLayout 的实现基本就分为两部分：负责识别当前状态的状态识别模块和根据当前状态处理滚动操作的滚动处理模块。
+确认了状态定义后剩下的工作基本就分为两部分：状态识别和滚动处理。
 
-###### 状态识别模块
+###### 状态识别
 
-根据上面的分析，状态识别的逻辑已经呼之欲出了，因为在 SlideLayout 内部 slider 是通过高度 sliderTop 来决定位置的，所以可以通过判断 sliderTop < headerHeight 是否成立来决定当前是否处于 Slide 状态，否则处于 Scroll 状态。Refresh 状态的判断最简单，只需要满足 refreshHeight > 0。由于可以从 Refresh/Slide 状态进入 Refresh 状态，所以实践上先判断 Refresh 然后再判断 Scroll 和 Slide，具体流程如下：
+根据前面讲的状态定义可得出状态判断逻辑如下：
 
-<img src="state_check_process.png" width="50%" />
+<img src="state_check_process_1.png" width="50%" />
 
-###### 滚动处理模块
+我们将 Refresh 状态的优先级设为最高，先判断刷新区域的高度是否大于 0 来检查是不是 Refresh 状态。由于 Slide 的定义是 slider 和 header 有重叠，而 slider 在 SlideLayout 中是通过 sliderTop 来表示位置的，所以我们可以通过  sliderTop < headerHeight 来判断是不是 Slide 状态。最后两个条件都不满足的话就是 Scroll 状态了。
+
+###### 滚动处理
 
 针对不同状态，对滚动事件定义了不同的处理规则，从而实现我们需要的交互效果。具体的处理逻辑见下表：
 
@@ -78,80 +120,54 @@ SlideLayout 的实现基本就分为两部分：负责识别当前状态的状�
 
 ##### 使用实例
 
-页面布局结构如下：
+我们通过动图来看看最终实现的效果，第一种是头部没超过屏幕的情况：
 
-``` xml
-<io.iftech.android.library.slide.SlideLayout>
-    <!-- header -->
-    <io.iftech.android.library.slide.MinVerticalMarginFrameLayout>
-        <androidx.core.widget.NestedScrollView>
-            <!-- header content here -->
-        </androidx.core.widget.NestedScrollView>
-    </io.iftech.android.library.slide.MinVerticalMarginFrameLayout>
-    <!-- slider -->
-    <io.iftech.android.library.slide.MinVerticalMarginFrameLayout>
-        <LinearLayout>
-            <io.iftech.android.library.slide.SlideBarLayout>
-                <!-- slide bar content here -->
-            </io.iftech.android.library.slide.SlideBarLayout>
-            <androidx.recyclerview.widget.RecyclerView/>
-        </LinearLayout>
-    </io.iftech.android.library.slide.MinVerticalMarginFrameLayout>
-    <!-- refresh -->
-    <io.iftech.android.library.refresh.RefreshViewLayout/>
-</io.iftech.android.library.slide.SlideLayout>
-```
-
-代码中需要指定 header 和 slider 中各自实现 NestedScrollingChild 接口的组件。具体方法如下:
-
-``` kotlin
-headerNestedScrollingChildImplView.configSlideChildTypeHeader()
-silderNestedScrollingChildImplView.configSlideChildTypeSlider()
-```
-
-除了上面的还有一些配置项需要设置下:
-
-1. 头部最小高度，用于指定当头部被折叠时需要显示的高度，这个值一般和 ActionBar 高度一致。
-
-   ``` kotlin
-   layHeader.minimumHeight = headerMinHeight
-   ```
-
-2. slider 根据上面设置的头部最小值设置最少间距，用来决定 slider 完全展开时的高度。
-
-   ``` kotlin
-   laySlider.setMinVerticalMargin(layHeader.minimumHeight)
-   ```
-
-3. 用于指定展示刷新动画的竖向起始位置。
-
-   ``` kotlin
-   laySlide.setOffset(layHeader.minimumHeight)
-   ```
-
-另外 RefreshViewLayout 只是一个刷新动画容器，并不提供具体的刷新动画实现。使用者可以通过实现 RefreshView 接口创建自定义的刷新动画，并设置给 RefreshViewLayout 的 refreshInterface 来生效。本项目实现了一个简单的文本刷新动画作为例子，代码如下:
-
-``` kotlin
-layRefresh.refreshInterface = MyRefreshViewImpl(this)
-```
-
-更多的使用方式可以访问 [SlideLayout](https://github.com/ruguoapp/iftech-android-slide-layout) 查看。
-
-我们通过动图来看看实现的效果，第一种是头部没超过屏幕的情况：
-
-<img src="case_scroll_state.gif" width="50%" />
+<img src="case_scroll_state.gif" width="30%" />
 
 然后再看看头部超过屏幕的情况：
 
-<img src="case_slide_state.gif" width="50%" />
+<img src="case_slide_state.gif" width="30%" />
 
+页面布局结构如下：
 
+``` xml
+<SlideLayout>
+    <!-- header -->
+    <MinVerticalMarginFrameLayout>
+        <androidx.core.widget.NestedScrollView>
+            <!-- header content here -->
+        </androidx.core.widget.NestedScrollView>
+    </MinVerticalMarginFrameLayout>
+    <!-- slider -->
+    <MinVerticalMarginFrameLayout>
+        <LinearLayout>
+            <SlideBarLayout>
+                <!-- slide bar content here -->
+            </SlideBarLayout>
+            <androidx.recyclerview.widget.RecyclerView />
+        </LinearLayout>
+    </MinVerticalMarginFrameLayout>
+    <!-- refresh -->
+    <RefreshViewLayout/>
+</SlideLayout>
+```
+
+- MinVerticalMarginFrameLayout：继承自 FrameLayout 实现的一个简单自定义布局组件，目的是在竖直方向设置最小间距。
+- SlideBarLayout：参考 AppBarLayout 实现的滑动条组件，我们开源的项目中有源码，感兴趣的同学可以前去查看。
+- RefreshViewLayout：用于存放刷新动画组件的容器，可以通过实现 RefreshView 接口创建自定义的刷新动画，并设置给 RefreshViewLayout 的 refreshInterface 来生效。
+- 更多的使用方式可以访问 [SlideLayout](https://github.com/ruguoapp/iftech-android-slide-layout) 项目主页查看。
 
 ##### 总结
 
-本文主要从 SlideLayout 的设计思路讲解，没有过多地涉及细节。不过已经将项目开源，项目地址：https://github.com/ruguoapp/iftech-android-slide-layout 如果对具体实现感兴趣可以前去查看，欢迎 **star** 和关注。SlideLayout 组件作为嵌套滚动机制的一种具体实现，在开发过程中让我深切感受到这套接口功能的强大，定义虽然简单，但却几乎能实现各种页面联动效果。
+本文介绍了为什么需要 SlideLayout，并简单阐述了设计思路和实现机制。作为嵌套滚动机制的一种具体实现，在开发过程中让我深切感受到这套接口功能的强大，定义虽然简单，但却几乎能实现各种页面联动效果。希望对读者有所启发和帮助。由于本人水平有限，文章或者代码如果有任何问题实属难免，欢迎评论指正或者提 issue。
 
-除了本文讲的这个实现外，大家还可以看一下我的另外一篇文章：[三级 NestedScroll 嵌套滚动实践](https://zhuanlan.zhihu.com/p/56582475) 从另一种思路实现了一个复杂的页面交互效果。由于本人水平有限，文章或者代码如果有任何问题实属难免，欢迎评论指正或者提 issue。
+SlideLayout 项目地址：https://github.com/ruguoapp/iftech-android-slide-layout 如果对具体实现感兴趣可以前去查看，欢迎 **star** 和关注。
+
+参考文章：
+
+* [三级 NestedScroll 嵌套滚动实践](https://zhuanlan.zhihu.com/p/56582475)
+* [NestedScrollingParent2](https://developer.android.com/reference/android/support/v4/view/NestedScrollingParent2)
+* [NestedScrollingChild2](https://developer.android.com/reference/android/support/v4/view/NestedScrollingChild2)
 
 
 
