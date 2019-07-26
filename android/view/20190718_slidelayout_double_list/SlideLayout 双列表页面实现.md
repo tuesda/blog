@@ -39,9 +39,11 @@ CoordinatorLayout 作为容器负责两部分的布局和联动滑动，AppBarLa
 
 有人可能会说，这和原来的有什么区别，都需要滑动。这种实现的好处主要有三点：
 
-1. 列表只会存在展开和隐藏两种状态，不会存在显示一半的情况，降低头部和列表切换的难度。
-2. 当列表滑动几屏后，此时仍然可以将列表滑出展示头部，不需要将列表滑到最顶部再拉出头部。
-3. 当头部很长时，头部内容滑动在任何位置都可以滑出列表，不需要将头部滑到最底部。
+1. 列表只会存在展开和隐藏两种状态，不会存在显示一半的情况，当将列表拖到屏幕中间松手时会自动滑动到展开或隐藏，降低头部和列表切换的难度。
+2. 当列表滑动几屏后，此时仍然可以拖动 scroll bar 将列表滑出展示头部，不需要将列表滑到最顶部再拉出头部。
+3. 当头部很长时，头部内容滑动在任何位置都可以拖动 scrollbar 滑出列表，不需要将头部滑到最底部。
+
+这里的 scrollbar 是个辅助组件，后面会讲到，这里先不展开。
 
 原有的 CoordinatorLayout 不能满足上述需求，所以我们需要实现一个自定义组件，由于这个组件的主要功能就是将页面底部滑出滑进，所以我们将这个组件命名为 **SlideLayout**。
 
@@ -59,7 +61,7 @@ CoordinatorLayout 作为容器负责两部分的布局和联动滑动，AppBarLa
 
 <img src="case_refresh_state.png" width="40%" />
 
-如上图在 SlideLayout 中有三个组件：refresh、header 和 slider，它们的含义如下：
+如上图在 SlideLayout 中当下拉出刷新动画时可以看到三个组件：refresh、header 和 slider，它们的含义如下：
 
 1. refresh：当用户下拉刷新页面时 refresh 负责展示加载动画。
 2. header：负责页面头部，需要包含实现 NestedScrollingChild 的组件从而向 SlideLayout 分发滚动事件。
@@ -111,10 +113,12 @@ enum class SlideGesture { SCROLL, SLIDE, REFRESH }
 
 针对不同状态，对滚动事件定义了不同的处理规则，从而实现我们需要的交互效果。具体的处理逻辑见下表：
 
-| 横向表示状态，竖向表示滚动类型             | Refresh                                                     | Scroll                                             | Slide                                                 |
-| ------------------------------------------ | ----------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------- |
-| nestedPreScroll (分发者消费之前的滚动事件) | 向上滚动: 消费滚动事件，折叠 刷新动画区域；向下滚动: 不消费 | 向上滚动: 消费滚动事件，折叠头部；向下滚动: 不消费 | 向上滚动: 消费滚动事件，展开 slider；向下滚动: 不消费 |
-| nestedScroll (分发者消费之后的滚动事件)    | 向上滚动: 不消费；向下滚动: 消费滚动事件，展开刷新动画区域  | 向上滚动: 不消费；向下滚动: 消费滚动事件，展开头部 | 向上滚动: 不消费；向下滚动: 消费滚动事件，折叠 slider |
+| 横向：状态<br />竖向：滚动类型 | Refresh                         | Scroll                 | Slide                     |
+| ------------------------------ | ------------------------------- | ---------------------- | ------------------------- |
+| nestedPreScroll 向上滚动       | 消费滚动事件，折叠 刷新动画区域 | 消费滚动事件，折叠头部 | 消费滚动事件，展开 slider |
+| nestedPreScroll 向下滚动       | 不消费                          | 不消费                 | 不消费                    |
+| nestedScroll 向上滚动          | 不消费                          | 不消费                 | 不消费                    |
+| nestedScroll 向下滚动          | 消费滚动事件，展开刷新动画区域  | 消费滚动事件，展开头部 | 消费滚动事件，折叠 slider |
 
 横向表示三种状态，竖向表示两种滚动事件类型，组合出六种不同的 case。这里给出的逻辑处理比较简单，实际实现时会遇到很多需要特殊处理的情况，这里就不一一列出了，感兴趣的同学可以查看项目源码，项目地址会在最后给出。
 
@@ -133,27 +137,26 @@ enum class SlideGesture { SCROLL, SLIDE, REFRESH }
 ``` xml
 <SlideLayout>
     <!-- header -->
-    <MinVerticalMarginFrameLayout>
+    <FrameLayout>
         <androidx.core.widget.NestedScrollView>
             <!-- header content here -->
         </androidx.core.widget.NestedScrollView>
-    </MinVerticalMarginFrameLayout>
+    </FrameLayout>
     <!-- slider -->
-    <MinVerticalMarginFrameLayout>
+    <FrameLayout>
         <LinearLayout>
             <SlideBarLayout>
                 <!-- slide bar content here -->
             </SlideBarLayout>
             <androidx.recyclerview.widget.RecyclerView />
         </LinearLayout>
-    </MinVerticalMarginFrameLayout>
+    </FrameLayout>
     <!-- refresh -->
     <RefreshViewLayout/>
 </SlideLayout>
 ```
 
-- MinVerticalMarginFrameLayout：继承自 FrameLayout 实现的一个简单自定义布局组件，目的是在竖直方向设置最小间距。
-- SlideBarLayout：参考 AppBarLayout 实现的滑动条组件，我们开源的项目中有源码，感兴趣的同学可以前去查看。
+- SlideBarLayout：上面 gif 图里的 scroll bar，参考 AppBarLayout 实现的滑动条组件，我们开源的项目中有源码，感兴趣的同学可以前去查看。
 - RefreshViewLayout：用于存放刷新动画组件的容器，可以通过实现 RefreshView 接口创建自定义的刷新动画，并设置给 RefreshViewLayout 的 refreshInterface 来生效。
 - 更多的使用方式可以访问 [SlideLayout](https://github.com/ruguoapp/iftech-android-slide-layout) 项目主页查看。
 
