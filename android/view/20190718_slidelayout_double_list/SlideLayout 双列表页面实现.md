@@ -158,13 +158,13 @@ enum class SlideGesture { SCROLL, SLIDE, REFRESH }
 
 - SlideBarLayout：上面 gif 图里的 scroll bar，参考 AppBarLayout 实现的滑动条组件，我们开源的项目中有源码，感兴趣的同学可以前去查看。
 - RefreshViewLayout：用于存放刷新动画组件的容器，可以通过实现 RefreshView 接口创建自定义的刷新动画，并设置给 RefreshViewLayout 的 refreshInterface 来生效。
-- 更多的使用方式可以访问 [SlideLayout](https://github.com/ruguoapp/iftech-android-slide-layout) 项目主页查看。
+- 更多的使用方式可以访问 [SlideLayout](https://github.com/iftechio/iftech-android-slide-layout) 项目主页查看。
 
 ##### 总结
 
 本文介绍了为什么需要 SlideLayout，并简单阐述了设计思路和实现机制，希望给读者有所启发和帮助。作为嵌套滚动机制的一种具体实现，在开发过程中让我深切感受到这套接口功能的强大，定义虽然简单，但却几乎能实现各种页面联动效果。由于本人水平有限，文章或者代码如果有任何问题实属难免，欢迎评论指正或者提 issue。
 
-SlideLayout 项目地址：https://github.com/ruguoapp/iftech-android-slide-layout 如果对具体实现感兴趣可以前去查看，欢迎 **star** 和关注。
+SlideLayout 项目地址：https://github.com/iftechio/iftech-android-slide-layout 如果对具体实现感兴趣可以前去查看，欢迎 **star** 和关注。
 
 参考文章：
 
