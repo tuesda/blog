@@ -67,3 +67,53 @@ int main(int argc, char* argv[]) {
 
 ### 创建 configure 脚本
 
+我们不直接写 `configure` 脚本文件，而是通过创建一个描述文件 `configure.ac` 来描述 configure 需要做的事情。`configure.ac` 使用 m4sh 写，m4sh 是 `m4` 宏命令和 shell 脚本的组合。
+
+第一个用到的宏命令是 `AC_INIT`，这个命令会初始化 autoconf 并配置一些关于软件的基本信息。下面这行代码表示，软件名是 `helloworld`，版本是 `0.1`，维护作者是  `george@thoughtbot.com`：
+
+``` m4sh
+AC_INIT([helloworld], [0.1], [george@thoughtbot.com])
+```
+
+因为这个项目需要用到 `automake`，所以我们要用下面这个命令来初始化它：
+
+``` m4sh
+AM_INIT_AUTOMAKE
+```
+
+接下来，我们需要告诉 `autoconf` configure 脚本需要的依赖。在这个例子中，configure 需要的只是 C 编译器，我们可以用下面这个宏命令来设置：
+
+``` m4sh
+AC_PROG_CC
+```
+
+如果我们需要别的依赖，可以使用别的 `m4` 宏命令来设置；例如 `AC_PATH_PROG` 表示在 `PATH` 上搜索一个特定的程序。
+
+此时我们已经列出了所有的依赖，我们可以使用它们。前面有提到， `configure` 脚本会根据系统的信息和 `Makefile.in` 文件生成 `Makefile` 文件。	
+
+下面这个宏命令 `AC_CONFIG_FILES` 表示让 autoconf 配置 configure 脚本找到 `Makefile.in` 文件，并将文件内的占位符用对应的值替换，例如将 `@PACKAGE_VERSION@` 替换成 `0.1`，然后将结果写在 `Makefile` 文件中。
+
+``` m4sh
+AC_CONFIG_FILES([Makefile])
+```
+
+最后，当我们把所有配置信息都告诉 autoconf 后，可以使用 `AC_OUTPUT` 命令去输出脚本：
+
+``` m4sh
+AC_OUTPUT
+```
+
+下面这段代码是 `configure.ac` 中的所有代码，相比 4737 行的 `configure` 脚本文件，这些代码好懂多了
+
+``` m4sh
+AC_INIT([helloworld], [0.1], [george@thoughtbot.com])
+AM_INIT_AUTOMAKE
+AC_PROG_CC
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
+```
+
+还差一点我们就可以发布软件了，`configure` 脚本需要一个 `Makefile.in` 文件，将系统相关信息填充进去后，生成最终的 `Makefile` 文件。
+
+###创建 Makefile 文件 
+
