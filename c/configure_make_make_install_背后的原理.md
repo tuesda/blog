@@ -115,5 +115,5 @@ AC_OUTPUT
 
 还差一点我们就可以发布软件了，`configure` 脚本需要一个 `Makefile.in` 文件，将系统相关信息填充进去后，生成最终的 `Makefile` 文件。
 
-###创建 Makefile 文件 
+### 创建 Makefile 文件 
 
