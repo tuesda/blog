@@ -9,6 +9,10 @@
 * [View.requestLayout() 不生效的问题研究](android/view/20190420_requestLayout_not_work/content.md)
 * [SlideLayout 双列表页面实现](https://github.com/tuesda/blog/blob/master/android/view/20190718_slidelayout_double_list/SlideLayout%20%E5%8F%8C%E5%88%97%E8%A1%A8%E9%A1%B5%E9%9D%A2%E5%AE%9E%E7%8E%B0.md)
 
+### 翻译
+
+- [configure、 make、 make install 背后的原理](c/configure、 make、 make install 背后的原理.md) [working]
+
 
 ### Other
 * [一些坑](android/README.md)
