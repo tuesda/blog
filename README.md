@@ -11,7 +11,7 @@
 
 ### 翻译
 
-- [configure、 make、 make install 背后的原理](c/configure、 make、 make install 背后的原理.md) -> working
+- [configure、 make、 make install 背后的原理](c/configure、 make、 make install 背后的原理.md)
 
 
 ### Other
