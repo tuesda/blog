@@ -117,3 +117,50 @@ AC_OUTPUT
 
 ### 创建 Makefile 文件 
 
+查看 `Makefile.in` 脚本发现它的代码又长又复杂，手写不太可能。不过可以先写一个 `Makefile.am` 脚本，然后通过 `automake` 工具生成 `Makefile.in` 脚本。`Makefile.am` 脚本相比 `Makefile.in` 简单一些，接下来看看如何去写。
+
+首先需要告诉 `automake` 项目的结构，因为这里的例子不是标准的 GNU 项目的结构，所以结构声明为 `foreign`：
+
+``` am
+AUTOMAKE_OPTIONS = foreign
+```
+
+接下来告诉 `automake` 需要 Makefile 构建的软件名字：
+
+``` am
+bin_PROGRAMS = helloworld
+```
+
+上面这行代码其实包含了很多信息，这多亏了 `automake` 的命名规则。
+
+`PROGRAMS` 称为「primary 主要」字段，它告诉了 `automake` `helloworld` 文件的属性。例如这里的 `PROGRAMS` 表示这个文件需要编译，而属性是 `SCRIPTS` 或 `DATA` 的文件则不需要编译。
+
+这里的 `bin` 前缀则是在告诉 `automake` 后面的文件需要安装在 `bindir` 变量所指示的路径下。类似 `bindir` 这样变量还有 `libdir` 和 `pkglibdir`，这些都是 `autotools` 定义的变量，也可以创建自定义的变量。
+
+如果项目中包含 Ruby 脚本，可以定义 `rubydir` 变量，用来记录安装 Ruby 脚本的地方：
+
+``` am
+rubydir = ${datadir}/ruby
+ruby_DATA = my_script.rb my_other_script.rb
+```
+
+安装路径前可以再一些前缀来让 `automake` 做一些别的操作。
+
+因为定义了 「`PROGRAMS` 程序」，所以需要告诉 `automake` 它的源文件。下面这行代码里，前缀 `helloworld` 表示编译的软件名字，而不是要安装的的路径。
+
+``` am
+helloworld_SOURCES = main.c
+```
+
+下面这段是 `Makefile.am` 脚本的完整代码，和 `configure.ac` 一起编译 `helloworld` 软件。相比它生成的 `Makefile.in`  脚本代码少了很多：
+
+``` am
+AUTOMAKE_OPTIONS = foreign
+bin_PROGRAMS = helloworld
+helloworld_SOURCES = main.c
+```
+
+### 将所有脚本放在一起
+
+
+
