@@ -160,7 +160,63 @@ bin_PROGRAMS = helloworld
 helloworld_SOURCES = main.c
 ```
 
-### 将所有脚本放在一起
+### 生成文件
 
+现在已经写好了所有需要的脚本，使用 autotools 就可以生成 `configure` 和 `Makefile.in` 脚本。
 
+首先需要为 autotools 准备 m4 脚本环境：
+
+``` shell
+aclocal
+```
+
+接下来使用 `autoconf` 将 `configure.ac` 生成 `configure` 脚本，用 `automake` 将 `Makefile.am` 生成为 `Makefile.in` 脚本：
+
+``` shell
+autoconf
+automake --add-missing
+```
+
+### 发布程序
+
+最终使用软件的用户不需要关心使用 autotools 的部分，所以我们只需要把 `configure` 和 `Makefile.in` 脚本发布出去就可以了，不需要前面写的脚本。
+
+autotools 也可以帮我们发布软件。Makefile 里有各种各样的命令，包括构建一个可以发布的软件包：
+
+``` shell
+./configure
+make dist
+```
+
+甚至可以测试软件包能否在各种版本系统上安装：
+
+``` shell
+make distcheck
+```
+
+### 总结
+
+现在终于知道这段安装命令的来历和工作原理了！
+
+下面分别展示下软件发布和安装的命令：
+
+- 发布：
+
+  ``` shell
+  aclocal # 设置m4 环境
+  autoconf # 生成 configure 脚本
+  automake --add-missing # 生成 Makefile.in 脚本
+  ./configure # 生成 Makefile 脚本
+  make distcheck # 使用 Makefile 构建一个发布软件并测试
+  ```
+
+- 安装：
+
+  ``` shell
+  ./configure # 生成 Makefile 脚本
+  make # 构建软件
+  make install # 使用 Makefile 安装软件
+  ```
+
+  
 

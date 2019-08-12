@@ -11,7 +11,7 @@
 
 ### 翻译
 
-* [configure、make、make install 背后的原理](c/configure_make_make_install_背后的原理.md) [working]
+* [configure、make、make install 背后的原理](c/configure_make_make_install_背后的原理.md)
 * [Kotlin Sequence 教程](kotlin/20190807_Kotlin_Sequence_Tutorial_translate.md) [working]
 
 
