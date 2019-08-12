@@ -177,7 +177,7 @@ autoconf
 automake --add-missing
 ```
 
-### 发布程序
+### 发布软件
 
 最终使用软件的用户不需要关心使用 autotools 的部分，所以我们只需要把 `configure` 和 `Makefile.in` 脚本发布出去就可以了，不需要前面写的脚本。
 
@@ -188,7 +188,7 @@ autotools 也可以帮我们发布软件。Makefile 里有各种各样的命令�
 make dist
 ```
 
-甚至可以测试软件包能否在各种版本系统上安装：
+还可以测试软件包能否在各种版本系统上安装：
 
 ``` shell
 make distcheck
