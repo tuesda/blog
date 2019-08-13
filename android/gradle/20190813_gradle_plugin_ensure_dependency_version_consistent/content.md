@@ -10,7 +10,7 @@
 
 - IDE：intellji
 - lanugage：groovy
-- maven 仓库：local vs remove
+- maven 仓库：local vs remote
 
 ### 依赖信息配置化
 
