@@ -16,6 +16,10 @@
 * [configure、make、make install 背后的原理](c/configure_make_make_install_背后的原理.md)
 * [Kotlin Sequence 教程](kotlin/20190807_Kotlin_Sequence_Tutorial_translate.md) [working]
 
+### Snippets
+
+* [用 Charles 在 Android 手机上抓包](snippets/20190823_charles_capture_package_for_android.md)
+
 
 ### Other
 * [一些坑](android/README.md)
