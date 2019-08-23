@@ -45,9 +45,11 @@
     *.host.com
     ```
 
-    
 
-    
+
+> References:
+>
+> - https://medium.com/@daptronic/the-android-emulator-and-charles-proxy-a-love-story-595c23484e02
 
 
 
