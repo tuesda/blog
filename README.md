@@ -8,6 +8,7 @@
 * [三级 NestedScroll 嵌套滚动实践](https://github.com/tuesda/blog/blob/master/android/view/nested_scroll/20181122_three_level_nested_scroll.md)
 * [View.requestLayout() 不生效的问题研究](android/view/20190420_requestLayout_not_work/content.md)
 * [SlideLayout 双列表页面实现](https://github.com/tuesda/blog/blob/master/android/view/20190718_slidelayout_double_list/SlideLayout%20%E5%8F%8C%E5%88%97%E8%A1%A8%E9%A1%B5%E9%9D%A2%E5%AE%9E%E7%8E%B0.md)
+* [Apk 签名简明教程](android/gradle/20190823_sign_apk/content.md)
 * [开发 Gradle 插件](android/gradle/20190816_develop_gradle_plugin/content.md) [working]
 * [使用 Gradle 插件确保依赖版本一致](android/gradle/20190813_gradle_plugin_ensure_dependency_version_consistent/content.md) [working]
 
