@@ -1,5 +1,7 @@
 ### Review 最佳实践（Reviewer）
 
+> https://google.github.io/eng-practices/review/reviewer/
+
 #### Review 标准
 
 Reviewer 的责任是保证每个提交在不断地提高项目代码的可维护性和健壮性，即使单个提交不那么完美，没有完美的代码，只有更好的代码。
