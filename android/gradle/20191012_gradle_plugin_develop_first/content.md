@@ -67,4 +67,4 @@ apply plugin: 'com.android.application'
 - 插件可以使用 java/kotlin 来写，为不熟悉 gradle 代码的开发者降低开发难度。
 - 增进对 Android 构建过程的理解，有助于学习 Android 热布丁、插件化等技术。
 
-现在我们明白了 gradle 插件是什么，以及为什么要创建 gradle 插件，接下来让我们点击这里查看第二篇文章来看看如何一步步创建一个 gradle 插件。
+现在我们明白了 gradle 插件是什么，以及为什么要创建 gradle 插件，接下来让我们点击[这里](https://github.com/tuesda/blog/blob/master/android/gradle/20191012_2_gradle_plugin_develop_second/content.md)查看第二篇文章来看看如何一步步创建一个 gradle 插件。

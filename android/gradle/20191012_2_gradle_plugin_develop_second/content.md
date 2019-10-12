@@ -2,7 +2,7 @@
 
 
 
-上一篇我们介绍了 gradle 插件相关的概念，没看的同学可以点击这里查看，这一篇让我们结合例子来看看如何一步步创建一个 gradle 插件，并在 Android 项目中使用。
+上一篇我们介绍了 gradle 插件相关的概念，没看的同学可以点击[这里](https://github.com/tuesda/blog/blob/master/android/gradle/20191012_gradle_plugin_develop_first/content.md)查看，这一篇让我们结合例子来看看如何一步步创建一个 gradle 插件，并在 Android 项目中使用。
 
 ### IDE
 
