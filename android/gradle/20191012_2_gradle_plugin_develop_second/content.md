@@ -196,7 +196,7 @@ gradle 插件比较主流的开发语言是 groovy，因为 gradle 就是用 gro
 
 	``` groovy
 	project.extensions.findByName('android').with {
-		getProperty('defaultConfig').with {
+        getProperty('defaultConfig').with {
 			setProperty('minSdkVersion', 21)
 			setProperty('targetSdkVersion', 26)
 		}
