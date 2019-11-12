@@ -11,6 +11,7 @@
 * [Apk 签名简明教程](android/gradle/20190823_sign_apk/content.md)
 * [如何从零开发一个 gradle 插件（一）](android/gradle/20191012_gradle_plugin_develop_first/content.md)
 * [如何从零开发一个 gradle 插件（二）](android/gradle/20191012_2_gradle_plugin_develop_second/content.md)
+* [Gradle 不支持 maven 仓库组件的 pom 文件中的仓库信息](android/gradle/20191112_gradle_cant_realize_pom_repo/content.md)
 * [使用 Gradle 插件确保依赖版本一致](android/gradle/20190813_gradle_plugin_ensure_dependency_version_consistent/content.md) [working]
 
 ### 翻译
