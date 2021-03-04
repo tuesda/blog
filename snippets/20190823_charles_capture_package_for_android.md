@@ -1,5 +1,5 @@
 ### Charles 在 Android 设备上抓包
-
+- 电脑上关掉 surge 等代理翻墙软件
 - 手机上 Wi-Fi 设置代理 IP 和 Port
     - IP：电脑局域网 IP 地址，查看方式：打开 Charles  `Help - Local IP Address`
     - Port：打开 Charles `Proxy - Proxy Settings... - Proxies` 查看或设置
